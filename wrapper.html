@@ -5,21 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>معاينة التطبيق (Wrapper)</title>
   <style>
-    html,body { height:100%; margin:0; padding:0; background:#fff; }
-    body { overflow:hidden; font-family: system-ui, Arial, sans-serif; }
-    .open-btn {
-      position: fixed; left:12px; top:12px; z-index:9999;
-      background:#176fb0; color:#fff; padding:8px 12px; border-radius:8px;
-      text-decoration:none; font-weight:600; box-shadow:0 6px 18px rgba(0,0,0,.12);
-    }
-    .frame-wrap { position:fixed; inset:0; overflow:hidden; display:flex; align-items:flex-start; justify-content:center; }
-    iframe {
-      border:0;
-      transform-origin: 0 0; /* هام لأننا سنقوم بالـ scale من الزاوية العلوية اليسرى */
-      display:block;
-      will-change: transform;
-      background:#fff;
-    }
+    html,body { height:100%; margin:0; padding:0; background:#fff; overflow:hidden; }
+    .open-btn { position:fixed; left:12px; top:12px; z-index:9999; background:#176fb0; color:#fff; padding:8px 12px; border-radius:8px; text-decoration:none; font-weight:600; }
+    .frame-wrap { position:fixed; inset:0; overflow:hidden; display:flex; align-items:flex-start; justify-content:center; background:#fff; }
+    iframe { border:0; transform-origin: 0 0; display:block; will-change:transform; }
   </style>
 </head>
 <body>
@@ -38,51 +27,30 @@
     const iframe = document.getElementById('theFrame');
     const wrap = document.getElementById('frameWrap');
 
-    // استقبل الأبعاد المرسلة من داخل الصفحة
+    // يستقبل أبعاد المحتوى من داخل الصفحة
     window.addEventListener('message', (e) => {
-      // للأمان: تأكد من مصدر الرسالة إذا أردت
-      // const allowedOrigin = 'https://kd9041470-beep.github.io';
-      // if (e.origin !== allowedOrigin) return;
-
       const data = e.data || {};
       if (data.type === 'setSize' && data.width && data.height) {
         fitFrameToSize(data.width, data.height);
       }
     }, false);
 
-    // نحسب مقياس مناسب ونطبقه
     function fitFrameToSize(contentWidth, contentHeight) {
-      // المساحة المتاحة داخل الغلاف
       const containerWidth = wrap.clientWidth;
-      const containerHeight = wrap.clientHeight;
-
-      // مقياس العرض المطلوب ليلائم العرض المتاح
-      const scaleX = containerWidth / contentWidth;
-      // لا نريد تكبير المحتوى أكثر من حجمه الأصلي
-      const scale = Math.min(scaleX, 1);
-
-      // نضبط عرض وارتفاع iframe إلى الحجم الأصلي للمحتوى،
-      // ثم نطبق التحجيم ليناسب العرض (scale)
+      const scale = Math.min(containerWidth / contentWidth, 1);
       iframe.style.width = contentWidth + 'px';
       iframe.style.height = contentHeight + 'px';
       iframe.style.transform = 'scale(' + scale + ')';
-
-      // نضبط ارتفاع الحاوية لإظهار المحتوى بشكل كامل
       const displayedHeight = Math.ceil(contentHeight * scale);
       wrap.style.height = displayedHeight + 'px';
-      // منع أي تمرير أفقي من الغلاف
       document.documentElement.style.overflowX = 'hidden';
       document.body.style.overflowX = 'hidden';
     }
 
-    // طلب أولي للـ iframe ليرسل الحجم (قد لا يستجيب إن لم يُدعّم)
     iframe.addEventListener('load', () => {
-      try {
-        iframe.contentWindow.postMessage({ type: 'pleaseSendSize' }, '*');
-      } catch (err) { /* cross-origin may block direct access, inner page should still send size on load */ }
+      try { iframe.contentWindow.postMessage({ type:'pleaseSendSize' }, '*'); } catch(e){}
     });
 
-    // عند تغيير حجم نافذة الأم نعيد المحاولة
     window.addEventListener('resize', () => {
       try { iframe.contentWindow.postMessage({ type:'pleaseSendSize' }, '*'); } catch(e){}
     });

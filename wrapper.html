@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>معاينة تطبيق</title>
+
+  <style>
+    /* ملء الشاشة وإلغاء هوامش المتصفح */
+    html,body { height:100%; margin:0; padding:0; background:#fff; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+    /* الحاوية لتحجيم iframe ان لزم */
+    .frame-wrap {
+      position:fixed;
+      inset:0;
+      display:flex;
+      align-items:stretch;
+      justify-content:center;
+      background:#fff;
+    }
+    iframe {
+      width:100%;
+      height:100vh;       /* ارتفاع نافذة العرض */
+      border:0;
+      display:block;
+    }
+
+    /* زر فتح في نافذة جديدة لو تعذّر العرض داخل الـ iframe */
+    .open-btn {
+      position: fixed;
+      left: 12px;
+      top: 12px;
+      z-index: 9999;
+      background: #0b76d1;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      font-family: sans-serif;
+      box-shadow: 0 6px 20px rgba(0,0,0,.08);
+    }
+
+    /* عند الصغير جداً (اختبار مع شاشات صغيرة) */
+    @media (max-width:420px) {
+      .open-btn { left: 8px; top: 8px; padding:6px 10px; font-size:14px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- زر فتح الرابط مباشرة إن فشل العرض داخل الـ iframe -->
+  <a class="open-btn" href="https://kd9041470-beep.github.io/new-nepiy/" target="_blank" rel="noopener">افتح الموقع</a>
+
+  <div class="frame-wrap" id="frameWrap">
+    <iframe id="theFrame"
+      src="https://kd9041470-beep.github.io/new-nepiy/"
+      title="منصة مدرسة النبي اليتيم"
+      sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+      scrolling="auto"
+      ></iframe>
+  </div>
+
+  <script>
+    // نستقبل رسائل من داخل الإطار (إذا أرسل الموقع ارتفاعه)
+    window.addEventListener('message', function (e) {
+      // فقط نقبل رسائل من نفس المصدر (أمن)
+      try {
+        const origin = new URL('https://kd9041470-beep.github.io').origin;
+        if (e.origin !== origin) return;
+      } catch (err) { /* ignore */ }
+
+      if (e.data && e.data.type === 'setHeight' && e.data.height) {
+        const iframe = document.getElementById('theFrame');
+        // عرض iframe يملأ العرض، نضبط الارتفاع ليغطي المحتوى (تجنب scroll مزدوج)
+        iframe.style.height = (parseInt(e.data.height,10) + 20) + 'px';
+      }
+    });
+    // إن أردت: محاولة فتح iframe بنفس الحجم الافتراضي، وإرسال رسالة لطلب الارتفاع
+    // (لن ينجح cross-origin إلا إذا سمح الموقع بالرسائل أو كان نفس الأصل)
+    function requestHeight() {
+      const f = document.getElementById('theFrame');
+      try {
+        f.contentWindow.postMessage({ type: 'pleaseSendHeight' }, '*');
+      } catch (e) {}
+    }
+    // نطلب بعد تحميل الإطار
+    document.getElementById('theFrame').addEventListener('load', function(){ requestHeight(); });
+  </script>
+</body>
+</html>
